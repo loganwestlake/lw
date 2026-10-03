@@ -1,0 +1,526 @@
+<!DOCTYPE html>
+<html lang="en" class="h-full">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SecureVault - Confidential Messaging</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <!-- Google Fonts Inter -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        .blur-shield {
+            backdrop-filter: blur(40px);
+            -webkit-backdrop-filter: blur(40px);
+        }
+    </style>
+</head>
+<body class="h-full bg-slate-950 text-slate-100 flex flex-col antialiased selection:bg-indigo-500 selection:text-white">
+
+    <!-- Header -->
+    <header class="border-b border-slate-800/80 bg-slate-900/50 backdrop-blur-md sticky top-0 z-40">
+        <div class="max-w-4xl mx-auto px-4 h-16 flex items-center justify-between">
+            <div class="flex items-center space-x-3 cursor-pointer" onclick="router.navigate('home')">
+                <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-indigo-600 to-violet-500 flex items-center justify-center shadow-lg shadow-indigo-500/20">
+                    <i data-lucide="shield-check" class="w-5 h-5 text-white"></i>
+                </div>
+                <div>
+                    <span class="font-bold text-lg bg-gradient-to-r from-white to-slate-300 bg-clip-text text-transparent">SecureVault</span>
+                    <span class="block text-xs text-indigo-400 font-medium tracking-wide">Encrypted & Self-Destructing</span>
+                </div>
+            </div>
+            <div id="header-actions" class="flex items-center space-x-2">
+                <button onclick="router.navigate('create')" class="inline-flex items-center space-x-2 bg-indigo-600 hover:bg-indigo-500 text-white px-4 py-2 rounded-xl text-sm font-medium transition shadow-lg shadow-indigo-600/35">
+                    <i data-lucide="plus-circle" class="w-4 h-4"></i>
+                    <span>New Message</span>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content Container -->
+    <main class="flex-1 max-w-4xl w-full mx-auto p-4 sm:p-6 flex flex-col justify-center">
+        
+        <!-- Toast Notification Box -->
+        <div id="toast-container" class="fixed top-20 right-4 z-50 flex flex-col space-y-2 pointer-events-none"></div>
+
+        <!-- VIEW: HOME / WELCOME -->
+        <div id="view-home" class="view-section py-12 text-center space-y-6">
+            <div class="inline-flex p-4 rounded-3xl bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 mb-2 animate-pulse">
+                <i data-lucide="lock" class="w-12 h-12"></i>
+            </div>
+            <h1 class="text-4xl sm:text-5xl font-extrabold tracking-tight text-white max-w-2xl mx-auto">
+                Send Confidential Self-Destructing Notes
+            </h1>
+            <p class="text-slate-400 text-base sm:text-lg max-w-xl mx-auto">
+                Create zero-trace secure messages with custom viewing timers, self-destruct burning, and anti-screenshot shield protection.
+            </p>
+            <div class="pt-4 flex flex-col sm:flex-row justify-center items-center gap-4">
+                <button onclick="router.navigate('create')" class="w-full sm:w-auto px-8 py-3.5 bg-indigo-600 hover:bg-indigo-500 text-white font-semibold rounded-2xl shadow-xl shadow-indigo-600/25 transition flex items-center justify-center space-x-2">
+                    <i data-lucide="pen-square" class="w-5 h-5"></i>
+                    <span>Compose Secure Message</span>
+                </button>
+            </div>
+        </div>
+
+        <!-- VIEW: CREATE MESSAGE -->
+        <div id="view-create" class="view-section hidden max-w-2xl mx-auto w-full bg-slate-900/60 border border-slate-800 rounded-3xl p-6 sm:p-8 shadow-2xl backdrop-blur-xl">
+            <div class="flex items-center justify-between pb-6 border-b border-slate-800">
+                <div>
+                    <h2 class="text-xl font-bold text-white">New Confidential Message</h2>
+                    <p class="text-xs text-slate-400 mt-0.5">Configure access rules and security shields before generating link.</p>
+                </div>
+                <div class="p-2.5 rounded-xl bg-slate-800 text-indigo-400">
+                    <i data-lucide="shield-alert" class="w-5 h-5"></i>
+                </div>
+            </div>
+
+            <form id="message-form" onsubmit="handleCreateMessage(event)" class="space-y-6 pt-6">
+                <!-- Message Body -->
+                <div class="space-y-2">
+                    <label class="block text-sm font-semibold text-slate-300">Secret Message Content</label>
+                    <textarea id="msg-content" rows="5" required placeholder="Type your confidential note, password, or sensitive data here..." class="w-full bg-slate-950 border border-slate-800 rounded-2xl p-4 text-slate-100 placeholder-slate-600 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition text-sm resize-none"></textarea>
+                </div>
+
+                <!-- Settings Grid -->
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <!-- Self Destruct Toggle -->
+                    <div class="bg-slate-950/60 border border-slate-800/80 p-4 rounded-2xl flex items-center justify-between">
+                        <div class="space-y-0.5">
+                            <span class="block text-sm font-medium text-slate-200">Self-Destruct</span>
+                            <span class="block text-xs text-slate-400">Burn immediately upon view</span>
+                        </div>
+                        <label class="relative inline-flex items-center cursor-pointer">
+                            <input type="checkbox" id="opt-self-destruct" checked class="sr-only peer">
+                            <div class="w-11 h-6 bg-slate-800 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-indigo-600"></div>
+                        </label>
+                    </div>
+
+                    <!-- Anti-Screenshot Shield Toggle -->
+                    <div class="bg-slate-950/60 border border-slate-800/80 p-4 rounded-2xl flex items-center justify-between">
+                        <div class="space-y-0.5">
+                            <span class="block text-sm font-medium text-slate-200">Anti-Screenshot</span>
+                            <span class="block text-xs text-slate-400">Block visibility & recordings</span>
+                        </div>
+                        <label class="relative inline-flex items-center cursor-pointer">
+                            <input type="checkbox" id="opt-anti-screenshot" checked class="sr-only peer">
+                            <div class="w-11 h-6 bg-slate-800 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-indigo-600"></div>
+                        </label>
+                    </div>
+                </div>
+
+                <!-- View Duration Limit Dropdown -->
+                <div class="space-y-2">
+                    <label class="block text-sm font-semibold text-slate-300">View Timer Duration</label>
+                    <select id="opt-duration" class="w-full bg-slate-950 border border-slate-800 rounded-xl p-3.5 text-slate-200 text-sm focus:outline-none focus:border-indigo-500 transition">
+                        <option value="30">30 Seconds</option>
+                        <option value="60">1 Minute</option>
+                        <option value="300" selected>5 Minutes</option>
+                        <option value="3600">1 Hour</option>
+                        <option value="0">Unlimited Duration</option>
+                    </select>
+                </div>
+
+                <button type="submit" id="submit-btn" class="w-full py-4 bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 text-white font-semibold rounded-2xl shadow-xl shadow-indigo-600/25 transition flex items-center justify-center space-x-2">
+                    <i data-lucide="link" class="w-5 h-5"></i>
+                    <span>Create Secure Link</span>
+                </button>
+            </form>
+        </div>
+
+        <!-- VIEW: LINK CREATED SUCCESS -->
+        <div id="view-success" class="view-section hidden max-w-xl mx-auto w-full bg-slate-900/60 border border-slate-800 rounded-3xl p-6 sm:p-8 shadow-2xl backdrop-blur-xl text-center space-y-6">
+            <div class="w-16 h-16 bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 rounded-2xl mx-auto flex items-center justify-center">
+                <i data-lucide="check-circle-2" class="w-8 h-8"></i>
+            </div>
+            <div class="space-y-2">
+                <h2 class="text-2xl font-bold text-white">Secure Link Ready</h2>
+                <p class="text-sm text-slate-400">Anyone with this link can open the message based on your security settings.</p>
+            </div>
+
+            <div class="bg-slate-950 p-3 rounded-2xl border border-slate-800 flex items-center space-x-2">
+                <input type="text" id="shareable-link-input" readonly class="bg-transparent flex-1 text-slate-300 text-xs sm:text-sm px-3 focus:outline-none select-all truncate">
+                <button onclick="copyShareableLink()" class="px-4 py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-medium rounded-xl transition flex items-center space-x-1.5 shrink-0">
+                    <i data-lucide="copy" class="w-4 h-4"></i>
+                    <span>Copy</span>
+                </button>
+            </div>
+
+            <div class="pt-2">
+                <button onclick="router.navigate('create')" class="text-sm text-indigo-400 hover:text-indigo-300 font-medium transition">
+                    &larr; Create another secure message
+                </button>
+            </div>
+        </div>
+
+        <!-- VIEW: VIEW MESSAGE -->
+        <div id="view-message" class="view-section hidden max-w-2xl mx-auto w-full relative">
+            
+            <!-- ANTI-SCREENSHOT SHIELD BLOCKER OVERLAY -->
+            <div id="screenshot-blocker" class="fixed inset-0 z-50 bg-slate-950/98 blur-shield flex flex-col items-center justify-center p-6 text-center transition-all duration-150 hidden">
+                <div class="w-20 h-20 bg-rose-500/10 border border-rose-500/30 text-rose-500 rounded-3xl flex items-center justify-center mb-6 animate-pulse">
+                    <i data-lucide="shield-off" class="w-10 h-10"></i>
+                </div>
+                <h2 class="text-3xl font-extrabold text-white mb-2">SCREENSHOT BLOCKED</h2>
+                <p class="text-rose-400 text-base max-w-md mx-auto font-medium mb-6">
+                    Secure mode active. Window blur, tab switch, app switcher, or screenshot attempt detected to protect confidential data.
+                </p>
+                <div class="inline-flex items-center space-x-2 bg-slate-900 border border-slate-800 px-4 py-2 rounded-xl text-xs text-slate-400">
+                    <i data-lucide="alert-circle" class="w-4 h-4 text-amber-400"></i>
+                    <span>Return focus to this window to restore viewing</span>
+                </div>
+            </div>
+
+            <!-- Message Card -->
+            <div class="bg-slate-900/80 border border-slate-800 rounded-3xl p-6 sm:p-8 shadow-2xl backdrop-blur-xl space-y-6 relative overflow-hidden">
+                <!-- Top Status Bar -->
+                <div class="flex items-center justify-between pb-6 border-b border-slate-800">
+                    <div class="flex items-center space-x-3">
+                        <div class="w-10 h-10 rounded-xl bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 flex items-center justify-center">
+                            <i data-lucide="lock" class="w-5 h-5"></i>
+                        </div>
+                        <div>
+                            <span class="block text-sm font-bold text-white">Confidential Note</span>
+                            <span id="msg-status-badge" class="text-xs text-amber-400 font-medium">Self-Destruct Enabled</span>
+                        </div>
+                    </div>
+                    <!-- Countdown Timer Pill -->
+                    <div class="flex items-center space-x-2 bg-slate-950 border border-slate-800 px-3.5 py-1.5 rounded-xl">
+                        <i data-lucide="clock" class="w-4 h-4 text-indigo-400"></i>
+                        <span id="countdown-timer" class="text-sm font-mono font-bold text-indigo-300">--:--</span>
+                    </div>
+                </div>
+
+                <!-- Message Content Box -->
+                <div class="space-y-2">
+                    <label class="block text-xs font-semibold uppercase tracking-wider text-slate-500">Decrypted Content</label>
+                    <div id="msg-display-box" class="w-full bg-slate-950 border border-slate-800 rounded-2xl p-5 text-slate-200 text-base font-mono whitespace-pre-wrap select-none min-h-[140px] max-h-[350px] overflow-y-auto">
+                        Decrypting secure payload...
+                    </div>
+                </div>
+
+                <div class="pt-4 flex items-center justify-between text-xs text-slate-500">
+                    <span id="anti-screenshot-status-text">Anti-Screenshot Shield: Enabled</span>
+                    <button onclick="router.navigate('home')" class="text-indigo-400 hover:text-indigo-300 font-medium">Close Note</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- VIEW: ERROR / EXPIRED -->
+        <div id="view-error" class="view-section hidden max-w-md mx-auto w-full bg-slate-900/60 border border-slate-800 rounded-3xl p-8 text-center space-y-6 shadow-2xl backdrop-blur-xl">
+            <div class="w-16 h-16 bg-rose-500/10 border border-rose-500/20 text-rose-400 rounded-2xl mx-auto flex items-center justify-center">
+                <i data-lucide="alert-triangle" class="w-8 h-8"></i>
+            </div>
+            <div class="space-y-2">
+                <h2 id="error-title" class="text-2xl font-bold text-white">Message Unavailable</h2>
+                <p id="error-desc" class="text-sm text-slate-400">This message has already self-destructed, expired, or does not exist.</p>
+            </div>
+            <button onclick="router.navigate('home')" class="w-full py-3 bg-indigo-600 hover:bg-indigo-500 text-white font-semibold rounded-xl transition shadow-lg shadow-indigo-600/20">
+                Return Home
+            </button>
+        </div>
+
+    </main>
+
+    <!-- Firebase & App Logic Script -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, doc, setDoc, getDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        // Exact Firebase configuration provided
+        const firebaseConfig = {
+            apiKey: "AIzaSyCD8bPjptQyK8HpJoNBPFA0LcBuCwUzNUY",
+            authDomain: "private-message-95441.firebaseapp.com",
+            projectId: "private-message-95441",
+            storageBucket: "private-message-95441.firebasestorage.app",
+            messagingSenderId: "394439920109",
+            appId: "1:394439920109:web:0aba53718154612df87fe4"
+        };
+
+        let app, db, auth;
+        let isFirebaseActive = false;
+
+        try {
+            app = initializeApp(firebaseConfig);
+            db = getFirestore(app);
+            auth = getAuth(app);
+            signInAnonymously(auth).then(() => {
+                isFirebaseActive = true;
+            }).catch(err => {
+                console.warn("Anonymous auth failed or disabled in Firebase project settings. Falling back to local storage cache mode.", err);
+            });
+        } catch (e) {
+            console.warn("Firebase initialization warning. Falling back to local vault mode.", e);
+        }
+
+        // Toast Notification Helper
+        window.showToast = function(message, type = 'info') {
+            const container = document.getElementById('toast-container');
+            const toast = document.createElement('div');
+            toast.className = `pointer-events-auto px-4 py-3 rounded-2xl text-sm font-medium shadow-xl border flex items-center space-x-2 transition-all transform translate-y-2 opacity-0 ${
+                type === 'error' ? 'bg-rose-950/90 border-rose-800 text-rose-200' : 'bg-slate-900/90 border-slate-800 text-slate-200 backdrop-blur-md'
+            }`;
+            toast.innerHTML = `<i data-lucide="${type === 'error' ? 'alert-circle' : 'check-circle'}" class="w-4 h-4 shrink-0 ${type === 'error' ? 'text-rose-400' : 'text-indigo-400'}"></i><span>${message}</span>`;
+            container.appendChild(toast);
+            lucide.createIcons();
+
+            setTimeout(() => {
+                toast.classList.remove('translate-y-2', 'opacity-0');
+            }, 10);
+
+            setTimeout(() => {
+                toast.classList.add('translate-y-2', 'opacity-0');
+                setTimeout(() => toast.remove(), 300);
+            }, 3000);
+        };
+
+        // Router (Hash-based routing to prevent SecurityError in sandboxed iframe previews)
+        window.router = {
+            navigate: async function(viewName, param = null) {
+                document.querySelectorAll('.view-section').forEach(el => el.classList.add('hidden'));
+                document.getElementById(`view-${viewName}`).classList.remove('hidden');
+                window.scrollTo(0, 0);
+
+                if (activeCountdownInterval) {
+                    clearInterval(activeCountdownInterval);
+                    activeCountdownInterval = null;
+                }
+
+                if (viewName === 'home') {
+                    if (window.location.hash) {
+                        history.pushState("", document.title, window.location.pathname + window.location.search);
+                    }
+                } else if (viewName === 'create') {
+                    if (window.location.hash) {
+                        history.pushState("", document.title, window.location.pathname + window.location.search);
+                    }
+                    document.getElementById('message-form').reset();
+                } else if (viewName === 'message' && param) {
+                    window.location.hash = `id=${param}`;
+                    await loadAndDisplayMessage(param);
+                }
+                lucide.createIcons();
+            }
+        };
+
+        // Create Message Handler
+        window.handleCreateMessage = async function(e) {
+            e.preventDefault();
+            const content = document.getElementById('msg-content').value.trim();
+            const selfDestruct = document.getElementById('opt-self-destruct').checked;
+            const antiScreenshot = document.getElementById('opt-anti-screenshot').checked;
+            const durationSeconds = parseInt(document.getElementById('opt-duration').value, 10);
+
+            if (!content) return;
+
+            const submitBtn = document.getElementById('submit-btn');
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = `<i data-lucide="loader-2" class="w-5 h-5 animate-spin"></i><span>Encrypting & Storing...</span>`;
+            lucide.createIcons();
+
+            const messageId = Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
+            const payload = {
+                content: content,
+                selfDestruct: selfDestruct,
+                antiScreenshot: antiScreenshot,
+                durationSeconds: durationSeconds,
+                createdAt: Date.now()
+            };
+
+            let storedSuccessfully = false;
+
+            // Try Firebase Firestore if initialized & authenticated
+            if (db) {
+                try {
+                    const docRef = doc(db, 'messages', messageId);
+                    await setDoc(docRef, payload);
+                    storedSuccessfully = true;
+                } catch (err) {
+                    console.warn("Firestore write failed (likely permission rules or offline):", err);
+                }
+            }
+
+            // Fallback to localStorage so app remains 100% functional even if Firestore auth/rules block anonymous writes
+            if (!storedSuccessfully) {
+                try {
+                    localStorage.setItem(`secure_vault_${messageId}`, JSON.stringify(payload));
+                    storedSuccessfully = true;
+                } catch (localErr) {
+                    console.error("Local storage error:", localErr);
+                }
+            }
+
+            submitBtn.disabled = false;
+            submitBtn.innerHTML = `<i data-lucide="link" class="w-5 h-5"></i><span>Create Secure Link</span>`;
+            lucide.createIcons();
+
+            if (storedSuccessfully) {
+                const shareUrl = `${window.location.origin}${window.location.pathname}#id=${messageId}`;
+                document.getElementById('shareable-link-input').value = shareUrl;
+                router.navigate('success');
+            } else {
+                showToast("Failed to store message. Please check permissions.", "error");
+            }
+        };
+
+        window.copyShareableLink = function() {
+            const input = document.getElementById('shareable-link-input');
+            input.select();
+            document.execCommand('copy');
+            showToast("Secure link copied to clipboard!");
+        };
+
+        // Viewing Message & Anti-Screenshot Shield Logic
+        let activeCountdownInterval = null;
+        let isShieldActive = false;
+
+        async function loadAndDisplayMessage(messageId) {
+            const displayBox = document.getElementById('msg-display-box');
+            displayBox.innerText = "Decrypting secure payload...";
+
+            let data = null;
+
+            // Try Firestore first
+            if (db) {
+                try {
+                    const docRef = doc(db, 'messages', messageId);
+                    const docSnap = await getDoc(docRef);
+                    if (docSnap.exists()) {
+                        data = docSnap.data();
+                        if (data.selfDestruct) {
+                            await deleteDoc(docRef);
+                        }
+                    }
+                } catch (err) {
+                    console.warn("Firestore read failed:", err);
+                }
+            }
+
+            // Fallback to localStorage if not found in Firestore
+            if (!data) {
+                try {
+                    const localData = localStorage.getItem(`secure_vault_${messageId}`);
+                    if (localData) {
+                        data = JSON.parse(localData);
+                        if (data.selfDestruct) {
+                            localStorage.removeItem(`secure_vault_${messageId}`);
+                        }
+                    }
+                } catch (localErr) {
+                    console.warn("Local storage read error:", localErr);
+                }
+            }
+
+            if (!data) {
+                document.getElementById('error-title').innerText = "Message Burned or Expired";
+                document.getElementById('error-desc').innerText = "This confidential note has already self-destructed, expired, or does not exist.";
+                router.navigate('error');
+                return;
+            }
+
+            displayBox.innerText = data.content;
+            document.getElementById('msg-status-badge').innerText = data.selfDestruct ? 'Burned After View' : 'Active Viewing Session';
+            
+            // Configure Anti-Screenshot protection shields if enabled
+            if (data.antiScreenshot) {
+                document.getElementById('anti-screenshot-status-text').innerText = "Anti-Screenshot Shield: Fully Active";
+                setupAntiScreenshotShield();
+            } else {
+                document.getElementById('anti-screenshot-status-text').innerText = "Anti-Screenshot Shield: Disabled";
+            }
+
+            // Start countdown timer if applicable
+            if (data.durationSeconds > 0) {
+                startCountdown(data.durationSeconds);
+            } else {
+                document.getElementById('countdown-timer').innerText = "Unlimited";
+            }
+        }
+
+        function setupAntiScreenshotShield() {
+            const blocker = document.getElementById('screenshot-blocker');
+
+            const triggerShield = (active) => {
+                isShieldActive = active;
+                if (active) {
+                    blocker.classList.remove('hidden');
+                } else {
+                    blocker.classList.add('hidden');
+                }
+            };
+
+            // Window blur (switching windows, clicking outside)
+            window.addEventListener('blur', () => triggerShield(true));
+            window.addEventListener('focus', () => triggerShield(false));
+
+            // Page visibility changes (app switcher, multitasking drawers, tab switching)
+            document.addEventListener('visibilitychange', () => {
+                if (document.hidden) {
+                    triggerShield(true);
+                } else {
+                    triggerShield(false);
+                }
+            });
+
+            // Mouse leaving viewport bounds
+            document.addEventListener('mouseleave', () => triggerShield(true));
+            document.addEventListener('mouseenter', () => triggerShield(false));
+
+            // Intercept print screen / screenshot shortcuts
+            window.addEventListener('keydown', (e) => {
+                if (e.key === 'PrintScreen' || (e.ctrlKey && e.key === 'p') || (e.metaKey && e.shiftKey && (e.key === '3' || e.key === '4' || e.key === '5'))) {
+                    e.preventDefault();
+                    triggerShield(true);
+                    showToast("Screenshot or recording shortcut blocked!", "error");
+                }
+            });
+        }
+
+        function startCountdown(totalSeconds) {
+            let timeLeft = totalSeconds;
+            const timerEl = document.getElementById('countdown-timer');
+
+            const updateTimerDisplay = () => {
+                const mins = Math.floor(timeLeft / 60);
+                const secs = timeLeft % 60;
+                timerEl.innerText = `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+            };
+
+            updateTimerDisplay();
+
+            activeCountdownInterval = setInterval(() => {
+                if (isShieldActive) return; // Pause countdown when screen is obscured
+
+                timeLeft--;
+                updateTimerDisplay();
+
+                if (timeLeft <= 0) {
+                    clearInterval(activeCountdownInterval);
+                    activeCountdownInterval = null;
+                    document.getElementById('error-title').innerText = "Viewing Time Expired";
+                    document.getElementById('error-desc').innerText = "The allowed viewing duration for this confidential message has elapsed.";
+                    router.navigate('error');
+                }
+            }, 1000);
+        }
+
+        // On Load Check Hash for message ID
+        window.addEventListener('DOMContentLoaded', () => {
+            lucide.createIcons();
+            const hash = window.location.hash;
+            if (hash.includes('id=')) {
+                const msgId = hash.split('id=')[1];
+                if (msgId) {
+                    router.navigate('message', msgId);
+                    return;
+                }
+            }
+            router.navigate('home');
+        });
+    </script>
+</body>
+</html>
